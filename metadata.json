@@ -1,0 +1,6 @@
+{
+  "name": "Personal CV Portfolio",
+  "description": "A modern, highly polished single-page personal CV and portfolio website featuring smooth transitions, a light/dark mode toggle, custom project showcase, and responsive layout.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

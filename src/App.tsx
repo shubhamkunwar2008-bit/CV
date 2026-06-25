@@ -22,6 +22,7 @@ import ProjectsSection from './components/ProjectsSection';
 import ContactSection from './components/ContactSection';
 import BackToTop from './components/BackToTop';
 import FloatingCustomizeControls from './components/FloatingCustomizeControls';
+import LoginModal from './components/LoginModal';
 
 export default function App() {
   // Theme state
@@ -31,6 +32,32 @@ export default function App() {
 
   // Edit/Customize state
   const [editMode, setEditMode] = useState<boolean>(false);
+
+  // Administrative login credentials protection
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem('admin_authorized') === 'true';
+  });
+
+  const handleToggleEditMode = (newEditValue: boolean) => {
+    if (!newEditValue) {
+      setEditMode(false);
+      return;
+    }
+    
+    if (isAuthenticated) {
+      setEditMode(true);
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    sessionStorage.setItem('admin_authorized', 'true');
+    setIsAuthenticated(true);
+    setEditMode(true);
+    setShowLoginModal(false);
+  };
 
   // Active section tab
   const [activeTab, setActiveTab] = useState<TabId>('about');
@@ -281,7 +308,7 @@ export default function App() {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         editMode={editMode}
-        setEditMode={setEditMode}
+        setEditMode={handleToggleEditMode}
         onResetData={handleResetData}
         onExportPdf={handleExportPdf}
       />
@@ -447,8 +474,15 @@ export default function App() {
       {/* Floating Customize Controls for quick sandbox editing access */}
       <FloatingCustomizeControls
         editMode={editMode}
-        setEditMode={setEditMode}
+        setEditMode={handleToggleEditMode}
         onResetData={handleResetData}
+      />
+
+      {/* Admin Authorization Access Key Gate */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
       />
 
     </div>

@@ -7,25 +7,44 @@ export default function BackToTop() {
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      // Toggle button visibility when scrolled past 300px
-      if (window.scrollY > 300) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+    let ticking = false;
+    let rAFId: number | null = null;
 
-      // Calculate scroll progress percentage
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        setScrollProgress((window.scrollY / totalHeight) * 100);
+    const handleScroll = () => {
+      if (!ticking) {
+        rAFId = window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          // Toggle button visibility when scrolled past 300px
+          setIsVisible(currentScrollY > 300);
+
+          // Calculate scroll progress percentage
+          const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+          if (totalHeight > 0) {
+            setScrollProgress((currentScrollY / totalHeight) * 100);
+          }
+          ticking = false;
+        });
+
+        ticking = true;
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Check once on initial mount
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Check once on initial mount
+    const initialScrollY = window.scrollY;
+    setIsVisible(initialScrollY > 300);
+    const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (totalHeight > 0) {
+      setScrollProgress((initialScrollY / totalHeight) * 100);
+    }
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rAFId !== null) {
+        window.cancelAnimationFrame(rAFId);
+      }
+    };
   }, []);
 
   const scrollToTop = () => {

@@ -39,33 +39,50 @@ export default function Header({
     { id: 'contact', label: 'Contact' }
   ];
 
-  // Track page scroll and direction to hide/reveal top bar
+  // Track page scroll and direction to hide/reveal top bar with requestAnimationFrame throttling
   useEffect(() => {
+    let ticking = false;
+    let rAFId: number | null = null;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Determine scrolled styling state
-      setScrolled(currentScrollY > 20);
+      if (!ticking) {
+        rAFId = window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          // Determine scrolled styling state (use a small buffer)
+          setScrolled(currentScrollY > 20);
 
-      // Smart header hide-on-scroll-down, show-on-scroll-up
-      if (currentScrollY <= 80) {
-        // Always show at the top of the page
-        setVisible(true);
-      } else if (currentScrollY > lastScrollY.current) {
-        // Scrolling down (finger swipes up): hide header
-        setVisible(false);
-        // Also close mobile menu drawer to keep screen clear
-        setMobileMenuOpen(false);
-      } else {
-        // Scrolling up (finger swipes down): show header
-        setVisible(true);
+          // Smart header hide-on-scroll-down, show-on-scroll-up with scroll difference tolerance (hysteresis)
+          const scrollDiff = currentScrollY - lastScrollY.current;
+
+          if (currentScrollY <= 80) {
+            // Always show at the top of the page
+            setVisible(true);
+          } else if (scrollDiff > 12) {
+            // Scrolling down (finger swipes up) sufficiently: hide header
+            setVisible(false);
+            // Also close mobile menu drawer to keep screen clear
+            setMobileMenuOpen(false);
+          } else if (scrollDiff < -12) {
+            // Scrolling up (finger swipes down) sufficiently: show header
+            setVisible(true);
+          }
+
+          lastScrollY.current = currentScrollY;
+          ticking = false;
+        });
+
+        ticking = true;
       }
-
-      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rAFId !== null) {
+        window.cancelAnimationFrame(rAFId);
+      }
+    };
   }, []);
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
@@ -73,7 +90,7 @@ export default function Header({
   return (
     <header
       id="app-header"
-      className={`fixed top-4 left-4 right-4 md:sticky md:top-0 md:left-0 md:right-0 md:w-full z-50 transition-all duration-300 transform no-print rounded-2xl md:rounded-none border ${
+      className={`fixed top-4 left-4 right-4 md:sticky md:top-0 md:left-0 md:right-0 md:w-full z-50 transition-[transform,opacity,background-color,border-color,box-shadow] duration-300 transform no-print rounded-2xl md:rounded-none border ${
         visible ? 'translate-y-0 opacity-100' : '-translate-y-24 md:-translate-y-full opacity-0 pointer-events-none'
       } ${
         scrolled

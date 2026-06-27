@@ -109,3 +109,13 @@ export interface Tab {
   id: TabId;
   label: string;
 }
+
+export interface PortfolioData {
+  info: PersonalInfo;
+  experience: ExperienceItem[];
+  education: EducationItem[];
+  skills: SkillItem[];
+  projects: ProjectItem[];
+  achievements: AchievementItem[];
+}
+

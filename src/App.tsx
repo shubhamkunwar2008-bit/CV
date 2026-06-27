@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, ArrowRight, Download, Eye, RefreshCw, LayoutDashboard } from 'lucide-react';
 
-import { PersonalInfo, ExperienceItem, EducationItem, SkillItem, ProjectItem, AchievementItem, TabId } from './types';
+import { PersonalInfo, ExperienceItem, EducationItem, SkillItem, ProjectItem, AchievementItem, TabId, PortfolioData } from './types';
 import {
   INITIAL_PERSONAL_INFO,
   INITIAL_EXPERIENCE,
@@ -27,6 +27,7 @@ import ContactSection from './components/ContactSection';
 import BackToTop from './components/BackToTop';
 import FloatingCustomizeControls from './components/FloatingCustomizeControls';
 import LoginModal from './components/LoginModal';
+import ResetModal from './components/ResetModal';
 
 export default function App() {
   // Theme state
@@ -36,6 +37,8 @@ export default function App() {
 
   // Edit/Customize state
   const [editMode, setEditMode] = useState<boolean>(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState<boolean>(false);
+  const [lastSyncedData, setLastSyncedData] = useState<PortfolioData | null>(null);
 
   // Administrative login credentials protection
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
@@ -45,6 +48,31 @@ export default function App() {
 
   const handleToggleEditMode = (newEditValue: boolean) => {
     if (!newEditValue) {
+      // Save current state as an edit-completed checkpoint draft when knowingly exiting edit mode
+      try {
+        const payload: PortfolioData = {
+          info,
+          experience,
+          education,
+          skills,
+          projects,
+          achievements
+        };
+        const stored = localStorage.getItem('portfolio_checkpoints');
+        let checkpoints: any[] = stored ? JSON.parse(stored) : [];
+        const newCp = {
+          id: `cp-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          label: 'Saved Draft (Edit Ended)',
+          isManual: false,
+          data: JSON.parse(JSON.stringify(payload))
+        };
+        const updated = [newCp, ...checkpoints].slice(0, 3);
+        localStorage.setItem('portfolio_checkpoints', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save session-end checkpoint', e);
+      }
+
       setEditMode(false);
       return;
     }
@@ -68,9 +96,6 @@ export default function App() {
 
   // Loading animation state on initial page load
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // Mouse cursor tracking state for subtle hover glow
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   // Mobile layout state to prevent loading heavy gradient layers on touch screens
   const [isMobile, setIsMobile] = useState<boolean>(true);
@@ -147,6 +172,9 @@ export default function App() {
         if (data.skills) setSkills(data.skills);
         if (data.projects) setProjects(data.projects);
         if (data.achievements) setAchievements(data.achievements);
+        
+        // Save database snapshot baseline for restore controls
+        setLastSyncedData(data);
       }
     });
 
@@ -169,15 +197,17 @@ export default function App() {
 
     const timer = setTimeout(async () => {
       console.log('Syncing edits to global Firestore database...');
-      await saveResumeData({
+      const payload: PortfolioData = {
         info,
         experience,
         education,
         skills,
         projects,
         achievements
-      });
+      };
+      await saveResumeData(payload);
       setHasUnsavedEdits(false);
+      setLastSyncedData(payload);
     }, delay);
 
     return () => clearTimeout(timer);
@@ -225,10 +255,11 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Track cursor position for optional background accent aura
+  // Track cursor position for optional background accent aura using high-performance CSS custom properties
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
@@ -239,30 +270,77 @@ export default function App() {
     window.print();
   };
 
-  // Reset local state to default high-craft database
-  const handleResetData = async () => {
-    if (window.confirm("Are you sure you want to reset all custom portfolio edits? This will restore original benchmarks.")) {
-      const resetData = {
-        info: INITIAL_PERSONAL_INFO,
-        experience: INITIAL_EXPERIENCE,
-        education: INITIAL_EDUCATION,
-        skills: INITIAL_SKILLS,
-        projects: INITIAL_PROJECTS,
-        achievements: INITIAL_ACHIEVEMENTS
+  // Restore portfolio state to a specific checkpoint or synced version
+  const handleRestoreData = async (data: PortfolioData, label: string) => {
+    console.log(`Restoring portfolio state to: ${label}`);
+    
+    if (data.info) setInfo(data.info);
+    if (data.experience) setExperience(data.experience);
+    if (data.education) setEducation(data.education);
+    if (data.skills) setSkills(data.skills);
+    if (data.projects) setProjects(data.projects);
+    if (data.achievements) setAchievements(data.achievements);
+
+    // Save restored version immediately to global Firestore database
+    await saveResumeData(data);
+    setLastSyncedData(data);
+    setHasUnsavedEdits(false);
+  };
+
+  // Reset local state to default factory benchmarks
+  const handleFactoryReset = async () => {
+    console.log('Initiating global Firestore database factory reset...');
+
+    // Save current state as a pre-reset checkpoint (last edit) before resetting
+    try {
+      const currentPayload: PortfolioData = {
+        info,
+        experience,
+        education,
+        skills,
+        projects,
+        achievements
       };
-
-      setInfo(INITIAL_PERSONAL_INFO);
-      setExperience(INITIAL_EXPERIENCE);
-      setEducation(INITIAL_EDUCATION);
-      setSkills(INITIAL_SKILLS);
-      setProjects(INITIAL_PROJECTS);
-      setAchievements(INITIAL_ACHIEVEMENTS);
-      setEditMode(false);
-      setHasUnsavedEdits(false);
-
-      console.log('Resetting global Firestore database to default template...');
-      await saveResumeData(resetData);
+      const stored = localStorage.getItem('portfolio_checkpoints');
+      let checkpoints: any[] = stored ? JSON.parse(stored) : [];
+      const newCp = {
+        id: `cp-${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        label: 'Pre-Reset Snapshot',
+        isManual: true,
+        data: JSON.parse(JSON.stringify(currentPayload))
+      };
+      const updated = [newCp, ...checkpoints].slice(0, 3);
+      localStorage.setItem('portfolio_checkpoints', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save pre-reset checkpoint', e);
     }
+
+    const resetData: PortfolioData = {
+      info: INITIAL_PERSONAL_INFO,
+      experience: INITIAL_EXPERIENCE,
+      education: INITIAL_EDUCATION,
+      skills: INITIAL_SKILLS,
+      projects: INITIAL_PROJECTS,
+      achievements: INITIAL_ACHIEVEMENTS
+    };
+
+    setInfo(INITIAL_PERSONAL_INFO);
+    setExperience(INITIAL_EXPERIENCE);
+    setEducation(INITIAL_EDUCATION);
+    setSkills(INITIAL_SKILLS);
+    setProjects(INITIAL_PROJECTS);
+    setAchievements(INITIAL_ACHIEVEMENTS);
+    setEditMode(false);
+    setHasUnsavedEdits(false);
+
+    await saveResumeData(resetData);
+    setLastSyncedData(resetData);
+  };
+
+  // Opens the visual rollback control portal
+  const handleOpenResetPortal = () => {
+    setIsResetModalOpen(true);
   };
 
   // Helper renderer to load current tab section
@@ -383,7 +461,7 @@ export default function App() {
         <div
           className="pointer-events-none fixed inset-0 z-0 opacity-10 dark:opacity-[0.07] transition-opacity duration-300 no-print"
           style={{
-            background: `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, var(--color-dusty-blue-500) 0%, transparent 100%)`
+            background: 'radial-gradient(400px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), var(--color-dusty-blue-500, #5c889e) 0%, transparent 100%)'
           }}
         />
       )}
@@ -414,7 +492,7 @@ export default function App() {
         setDarkMode={setDarkMode}
         editMode={editMode}
         setEditMode={handleToggleEditMode}
-        onResetData={handleResetData}
+        onResetData={handleOpenResetPortal}
         onExportPdf={handleExportPdf}
       />
 
@@ -602,8 +680,18 @@ export default function App() {
       <FloatingCustomizeControls
         editMode={editMode}
         setEditMode={handleToggleEditMode}
-        onResetData={handleResetData}
+        onResetData={handleOpenResetPortal}
         hasUnsavedEdits={hasUnsavedEdits}
+      />
+
+      {/* Visual Sandbox Restore & Revert Portal */}
+      <ResetModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        currentData={{ info, experience, education, skills, projects, achievements }}
+        lastSyncedData={lastSyncedData}
+        onRestoreData={handleRestoreData}
+        onFactoryReset={handleFactoryReset}
       />
 
       {/* Admin Authorization Access Key Gate */}

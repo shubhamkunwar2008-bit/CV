@@ -128,7 +128,7 @@ export default function ExperienceSection({ experience, setExperience, editMode,
                 type="text"
                 value={info.experienceBadge || "Timeline of Craft"}
                 onChange={(e) => setInfo({ ...info, experienceBadge: e.target.value })}
-                className="bg-transparent border-b border-dusty-blue-100 dark:border-charcoal-700 focus:outline-none font-semibold text-xs py-0.5"
+                className="bg-transparent border-b border-dusty-blue-100 dark:border-charcoal-700 focus:outline-none font-semibold text-xs py-0.5 text-dusty-blue-600 dark:text-dusty-blue-400"
                 placeholder="Section badge"
               />
             ) : (
@@ -192,6 +192,8 @@ export default function ExperienceSection({ experience, setExperience, editMode,
             id={`exp-card-${item.id}`}
             key={item.id}
             variants={timelineItemVariants}
+            initial="hidden"
+            animate="visible"
             className="relative group"
           >
             {/* Timeline Dot Indicator */}
@@ -213,7 +215,7 @@ export default function ExperienceSection({ experience, setExperience, editMode,
                         type="text"
                         value={item.role}
                         onChange={(e) => handleItemChange(item.id, 'role', e.target.value)}
-                        className="font-display font-extrabold text-lg text-charcoal-900 dark:text-warm-cream w-full border-b border-dusty-blue-100 bg-transparent py-0.5 focus:outline-none"
+                        className="font-display font-extrabold text-lg text-charcoal-900 dark:text-warm-cream w-full border-b border-dusty-blue-100 dark:border-charcoal-700 bg-transparent py-0.5 focus:outline-none"
                         placeholder="Role / Title"
                       />
                       <input
@@ -221,7 +223,7 @@ export default function ExperienceSection({ experience, setExperience, editMode,
                         type="text"
                         value={item.company}
                         onChange={(e) => handleItemChange(item.id, 'company', e.target.value)}
-                        className="font-semibold text-sm text-dusty-blue-600 dark:text-sage-500 w-full border-b border-dusty-blue-100 bg-transparent py-0.5 focus:outline-none"
+                        className="font-semibold text-sm text-dusty-blue-600 dark:text-sage-500 w-full border-b border-dusty-blue-100 dark:border-charcoal-700 bg-transparent py-0.5 focus:outline-none"
                         placeholder="Company"
                       />
                     </div>
@@ -246,7 +248,7 @@ export default function ExperienceSection({ experience, setExperience, editMode,
                         type="text"
                         value={item.period}
                         onChange={(e) => handleItemChange(item.id, 'period', e.target.value)}
-                        className="border-b border-dusty-blue-100 bg-transparent py-0.5 focus:outline-none text-right"
+                        className="border-b border-dusty-blue-100 dark:border-charcoal-700 bg-transparent py-0.5 focus:outline-none text-right text-charcoal-800 dark:text-warm-cream/90 text-xs md:text-sm font-medium w-24 md:w-32"
                       />
                     ) : (
                       <span className="font-medium">{item.period}</span>
@@ -260,7 +262,7 @@ export default function ExperienceSection({ experience, setExperience, editMode,
                         type="text"
                         value={item.location}
                         onChange={(e) => handleItemChange(item.id, 'location', e.target.value)}
-                        className="border-b border-dusty-blue-100 bg-transparent py-0.5 focus:outline-none text-right"
+                        className="border-b border-dusty-blue-100 dark:border-charcoal-700 bg-transparent py-0.5 focus:outline-none text-right text-charcoal-700 dark:text-warm-cream/80 text-xs md:text-sm w-24 md:w-32"
                       />
                     ) : (
                       <span>{item.location}</span>
@@ -277,7 +279,7 @@ export default function ExperienceSection({ experience, setExperience, editMode,
                     value={item.description}
                     onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                     rows={2}
-                    className="w-full border border-dusty-blue-100 bg-transparent p-2 rounded focus:outline-none text-sm font-sans text-charcoal-800"
+                    className="w-full border border-dusty-blue-100 dark:border-charcoal-700 bg-transparent p-2 rounded focus:outline-none text-sm font-sans text-charcoal-850 dark:text-warm-cream"
                   />
                 ) : (
                   <p className="text-sm text-charcoal-800 dark:text-warm-cream/90 font-medium">
@@ -315,7 +317,7 @@ export default function ExperienceSection({ experience, setExperience, editMode,
                               type="text"
                               value={bullet}
                               onChange={(e) => handleAchievementChange(item.id, bIdx, e.target.value)}
-                              className="w-full border-b border-dusty-blue-100 bg-transparent py-0.5 focus:outline-none"
+                              className="w-full border-b border-dusty-blue-100 dark:border-charcoal-700 bg-transparent py-0.5 focus:outline-none text-charcoal-800 dark:text-warm-cream/90 text-sm"
                             />
                             <button
                               id={`remove-bullet-${item.id}-${bIdx}`}

@@ -1,5 +1,6 @@
+import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Mail, Phone, MapPin, Github, Linkedin, Twitter, FileText, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Github, Linkedin, Twitter, FileText, Sparkles, CheckCircle2, Upload } from 'lucide-react';
 import { PersonalInfo } from '../types';
 
 interface HeroSectionProps {
@@ -10,6 +11,82 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ info, setInfo, editMode, onExportPdf }: HeroSectionProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (editMode) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = () => {
+    if (editMode) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!editMode) return;
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  const processFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select or drop an image file (PNG, JPG, or WEBP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const max_size = 500; // Keep the avatar size optimized for localStorage and visual quality
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > max_size) {
+              height *= max_size / width;
+              width = max_size;
+            }
+          } else {
+            if (height > max_size) {
+              width *= max_size / height;
+              height = max_size;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // 85% compressed JPEG
+            handleInputChange('avatarUrl', dataUrl);
+          }
+        };
+        img.src = event.target.result as string;
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleInputChange = (field: keyof PersonalInfo, value: any) => {
     setInfo({
       ...info,
@@ -61,20 +138,71 @@ export default function HeroSection({ info, setInfo, editMode, onExportPdf }: He
             
             <div className="relative w-full h-full rounded-[2.2rem] overflow-hidden border-4 border-white dark:border-charcoal-800 shadow-xl group-hover:scale-[1.02] transition-transform duration-300">
               {editMode ? (
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 text-center z-10">
-                  <span className="text-white text-xs mb-2">Image URL:</span>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`absolute inset-0 z-10 flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-all duration-300 ${
+                    isDragging 
+                      ? 'bg-dusty-blue-600/90 text-white scale-100' 
+                      : 'bg-black/65 text-white hover:bg-black/75'
+                  }`}
+                >
                   <input
-                    id="edit-avatar-url"
-                    type="text"
-                    value={info.avatarUrl}
-                    onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
-                    className="w-full text-xs p-1 bg-charcoal-800 border border-charcoal-700 text-white rounded focus:outline-none"
-                    placeholder="Unsplash / Image URL"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
                   />
+                  
+                  {showUrlInput ? (
+                    <div className="w-full flex flex-col items-center space-y-2 no-print" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-white text-xs font-semibold">Paste Image URL:</span>
+                      <input
+                        id="edit-avatar-url"
+                        type="text"
+                        value={info.avatarUrl}
+                        onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
+                        className="w-full text-xs px-2 py-1.5 bg-charcoal-800 border border-charcoal-700 text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-dusty-blue-500"
+                        placeholder="https://example.com/photo.jpg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput(false)}
+                        className="text-[10px] text-gray-300 hover:text-white underline mt-1 cursor-pointer"
+                      >
+                        Back to upload
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center space-y-2 pointer-events-none">
+                      <div className={`p-2.5 rounded-full bg-white/10 ${isDragging ? 'animate-bounce' : ''}`}>
+                        <Upload className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-xs font-bold leading-none">
+                        {isDragging ? 'Drop Image Here' : 'Upload Photo'}
+                      </span>
+                      <span className="text-[10px] text-gray-300 max-w-[150px] leading-tight">
+                        Drag & drop or click to browse files
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowUrlInput(true);
+                        }}
+                        className="pointer-events-auto mt-1.5 text-[10px] text-dusty-blue-300 hover:text-dusty-blue-100 underline cursor-pointer bg-black/40 px-2 py-1 rounded-md"
+                      >
+                        Or paste image URL
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : null}
               <img
-                src={info.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400&h=400"}
+                src={info.avatarUrl}
                 alt={info.name}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"

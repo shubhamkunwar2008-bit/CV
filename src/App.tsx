@@ -83,7 +83,13 @@ export default function App() {
   // Core portfolio state
   const [info, setInfo] = useState<PersonalInfo>(() => {
     const loaded = getStoredData<PersonalInfo>('personal_info', INITIAL_PERSONAL_INFO);
-    return loaded && typeof loaded === 'object' && !Array.isArray(loaded) ? loaded : INITIAL_PERSONAL_INFO;
+    if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
+      if (!loaded.avatarUrl || loaded.avatarUrl === "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400&h=400") {
+        loaded.avatarUrl = INITIAL_PERSONAL_INFO.avatarUrl;
+      }
+      return loaded;
+    }
+    return INITIAL_PERSONAL_INFO;
   });
   const [experience, setExperience] = useState<ExperienceItem[]>(() => {
     const loaded = getStoredData<ExperienceItem[]>('experience_list', INITIAL_EXPERIENCE);

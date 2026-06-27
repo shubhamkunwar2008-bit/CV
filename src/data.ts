@@ -1,4 +1,5 @@
 import { PersonalInfo, ExperienceItem, EducationItem, SkillItem, ProjectItem } from './types';
+import avatarImage from './assets/images/profile_avatar_1782538217628.jpg';
 
 export const INITIAL_PERSONAL_INFO: PersonalInfo = {
   name: "Shubham Kunwar",
@@ -7,7 +8,7 @@ export const INITIAL_PERSONAL_INFO: PersonalInfo = {
   bio: "I am a passionate software architect specializing in crafting highly interactive, visual, and performant web applications. With expertise in React, Next.js, and modern CSS frameworks, I translate complex requirements into clean, user-centric, and accessible codebases.",
   detailedBio: "Over the past 6+ years, I have collaborated with design agencies, startups, and product companies to engineer custom frontend solutions, visual dashboards, and custom interactive modules. I thrive in environments that value high craftsmanship, micro-interactions, robust architecture, and meticulous attention to detail. My design philosophy is rooted in structural honesty, minimalist layout, elegant typography, and purposeful motion.",
   location: "San Francisco, CA (Open to Remote)",
-  avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400&h=400",
+  avatarUrl: avatarImage,
   socials: {
     github: "https://github.com",
     linkedin: "https://linkedin.com",

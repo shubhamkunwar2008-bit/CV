@@ -1,17 +1,19 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Edit, RotateCcw, Check } from 'lucide-react';
+import { Edit, RotateCcw, Check, CloudLightning, CloudRain, Cloud } from 'lucide-react';
 
 interface FloatingCustomizeControlsProps {
   editMode: boolean;
   setEditMode: (edit: boolean) => void;
   onResetData: () => void;
+  hasUnsavedEdits: boolean;
 }
 
 export default function FloatingCustomizeControls({
   editMode,
   setEditMode,
   onResetData,
+  hasUnsavedEdits,
 }: FloatingCustomizeControlsProps) {
   return (
     <div
@@ -20,7 +22,7 @@ export default function FloatingCustomizeControls({
     >
       <motion.div
         layout
-        className="flex items-center bg-white/95 dark:bg-charcoal-800/95 backdrop-blur-md rounded-full shadow-lg border border-dusty-blue-100 dark:border-charcoal-700/80 p-1.5 gap-1.5"
+        className="flex items-center bg-white/95 dark:bg-charcoal-800/95 backdrop-blur-md rounded-full shadow-lg border border-dusty-blue-100 dark:border-charcoal-700/80 p-1.5 gap-2"
       >
         {/* Toggle Edit Mode Pill */}
         <motion.button
@@ -37,7 +39,7 @@ export default function FloatingCustomizeControls({
         >
           {editMode ? (
             <>
-              <Check className="w-3.5 h-3.5 animate-bounce" />
+              <Check className="w-3.5 h-3.5" />
               <span>Editing Active</span>
             </>
           ) : (
@@ -47,6 +49,31 @@ export default function FloatingCustomizeControls({
             </>
           )}
         </motion.button>
+
+        {/* Live Cloud Database Sync Status */}
+        <AnimatePresence mode="wait">
+          {editMode && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-dusty-blue-50/50 dark:bg-charcoal-700/30 border border-dusty-blue-100/30 dark:border-charcoal-600/30"
+            >
+              {hasUnsavedEdits ? (
+                <>
+                  <CloudLightning className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold font-mono tracking-tight uppercase">Syncing...</span>
+                </>
+              ) : (
+                <>
+                  <Cloud className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-mono tracking-tight uppercase">Synced</span>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Reset Button (only shown when editMode is active) */}
         <AnimatePresence>

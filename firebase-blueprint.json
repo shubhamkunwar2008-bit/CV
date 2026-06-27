@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "ResumeData": {
+      "title": "ResumeData",
+      "description": "Entire resume configuration including personal info, experience, education, skills, projects, and achievements.",
+      "type": "object",
+      "properties": {
+        "info": {
+          "type": "object"
+        },
+        "experience": {
+          "type": "array"
+        },
+        "education": {
+          "type": "array"
+        },
+        "skills": {
+          "type": "array"
+        },
+        "projects": {
+          "type": "array"
+        },
+        "achievements": {
+          "type": "array"
+        }
+      },
+      "required": ["info", "experience", "education", "skills", "projects", "achievements"]
+    }
+  },
+  "firestore": {
+    "/resume/{docId}": {
+      "schema": "ResumeData",
+      "description": "Collection storing the global resume configuration."
+    }
+  }
+}

@@ -44,9 +44,22 @@ export interface PersonalInfo {
   projectsTitle?: string;
   projectsDesc?: string;
   
+  achievementsBadge?: string;
+  achievementsTitle?: string;
+  achievementsDesc?: string;
+  
   contactBadge?: string;
   contactTitle?: string;
   contactDesc?: string;
+}
+
+export interface AchievementItem {
+  id: string;
+  title: string;
+  issuer: string;
+  date: string;
+  description: string;
+  certificateUrl?: string;
 }
 
 export interface ExperienceItem {
@@ -67,6 +80,7 @@ export interface EducationItem {
   period: string;
   description: string;
   achievements: string[];
+  certificateUrl?: string;
 }
 
 export interface SkillItem {
@@ -89,7 +103,7 @@ export interface ProjectItem {
   featured: boolean;
 }
 
-export type TabId = 'about' | 'experience' | 'education' | 'skills' | 'projects' | 'contact';
+export type TabId = 'about' | 'experience' | 'education' | 'skills' | 'projects' | 'achievements' | 'contact';
 
 export interface Tab {
   id: TabId;

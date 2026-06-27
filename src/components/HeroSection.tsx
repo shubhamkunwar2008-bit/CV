@@ -211,7 +211,8 @@ export default function HeroSection({ info, setInfo, editMode, onExportPdf }: He
 
             {/* Micro indicator tag (fully customizable and interactive in edit mode) */}
             <div 
-              className={`absolute -bottom-2 -right-2 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center shadow-md transition-all duration-300 ${
+              onClick={(e) => e.stopPropagation()}
+              className={`absolute -bottom-2 -right-2 z-30 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center shadow-md transition-all duration-300 ${
                 info.isAvailableForHire !== false 
                   ? "bg-emerald-500 shadow-emerald-500/20" 
                   : "bg-charcoal-500 dark:bg-charcoal-700 shadow-charcoal-500/20"

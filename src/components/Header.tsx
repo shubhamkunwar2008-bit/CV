@@ -35,6 +35,7 @@ export default function Header({
     { id: 'education', label: 'Education' },
     { id: 'skills', label: 'Skills' },
     { id: 'projects', label: 'Projects' },
+    { id: 'achievements', label: 'Achievements' },
     { id: 'contact', label: 'Contact' }
   ];
 
@@ -256,7 +257,7 @@ export default function Header({
                   }}
                   className={`flex items-center w-full px-4 py-3 rounded-xl text-base font-medium ${
                     editMode
-                      ? 'bg-sage-100 dark:bg-sage-900/30 text-sage-600'
+                      ? 'bg-sage-100 dark:bg-charcoal-700/50 text-sage-600 dark:text-sage-500'
                       : 'text-charcoal-700 dark:text-warm-cream/70 hover:bg-dusty-blue-50 dark:hover:bg-charcoal-800'
                   }`}
                 >

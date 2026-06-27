@@ -1,4 +1,4 @@
-import { PersonalInfo, ExperienceItem, EducationItem, SkillItem, ProjectItem } from './types';
+import { PersonalInfo, ExperienceItem, EducationItem, SkillItem, ProjectItem, AchievementItem } from './types';
 import avatarImage from './assets/images/profile_avatar_1782538217628.jpg';
 
 export const INITIAL_PERSONAL_INFO: PersonalInfo = {
@@ -44,6 +44,9 @@ export const INITIAL_PERSONAL_INFO: PersonalInfo = {
   projectsBadge: "Selected Masterpieces",
   projectsTitle: "Featured Creations",
   projectsDesc: "An exhibit of bespoke interfaces, custom interactive components, and comprehensive full-stack prototypes.",
+  achievementsBadge: "Milestones of Excellence",
+  achievementsTitle: "Honors & Achievements",
+  achievementsDesc: "A timeline of prestigious recognition, hackathon victories, academic honors, and engineering milestones.",
   contactBadge: "Get In Touch",
   contactTitle: "Start a Conversation",
   contactDesc: "Interested in starting a project, consulting opportunities, or saying hello? Drop me a line below."
@@ -214,6 +217,30 @@ export const INITIAL_PROJECTS: ProjectItem[] = [
     demoUrl: "https://example.com/demo6",
     githubUrl: "https://github.com",
     featured: false
+  }
+];
+
+export const INITIAL_ACHIEVEMENTS: AchievementItem[] = [
+  {
+    id: "ach-1",
+    title: "1st Place - Global Web Craft Hackathon",
+    issuer: "DevPost & Vercel",
+    date: "2025",
+    description: "Won first prize among 2,500+ participants for building a high-fidelity visual UI compiler that generates clean, accessible Tailwind CSS code."
+  },
+  {
+    id: "ach-2",
+    title: "Outstanding UI/UX Design Contributor",
+    issuer: "Aetheria Open Source Community",
+    date: "2024",
+    description: "Awarded for designing and engineering a library of fluid, micro-interaction components downloaded over 100k+ times."
+  },
+  {
+    id: "ach-3",
+    title: "Cybersecurity & Web Security Specialist Certificate",
+    issuer: "Google Career Certificates",
+    date: "2023",
+    description: "Completed comprehensive practical modules on secure code practices, pen-testing client interfaces, and designing secure OAuth systems."
   }
 ];
 

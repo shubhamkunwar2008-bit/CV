@@ -1,6 +1,8 @@
-import { motion } from 'motion/react';
-import { GraduationCap, Plus, Trash2, Calendar, MapPin, PlusCircle, MinusCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { GraduationCap, Plus, Trash2, Calendar, MapPin, PlusCircle, MinusCircle, FileImage, Upload, X, Eye } from 'lucide-react';
 import { EducationItem, PersonalInfo } from '../types';
+import { compressImage } from '../lib/imageCompressor';
 
 interface EducationSectionProps {
   education: EducationItem[];
@@ -47,6 +49,7 @@ const gridItemVariants = {
 };
 
 export default function EducationSection({ education, setEducation, editMode, info, setInfo }: EducationSectionProps) {
+  const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
   
   const handleItemChange = (id: string, field: keyof EducationItem, value: any) => {
     setEducation(
@@ -324,6 +327,79 @@ export default function EducationSection({ education, setEducation, editMode, in
                 </ul>
               </div>
 
+              {/* Certificate Verification Attachment */}
+              <div className="mt-6 pt-6 border-t border-dusty-blue-100/30 dark:border-charcoal-700/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-bold text-charcoal-900/40 dark:text-warm-cream/30 uppercase tracking-widest">
+                    Verification Certificate
+                  </h4>
+                </div>
+
+                {item.certificateUrl ? (
+                  <div className="relative rounded-2xl overflow-hidden bg-dusty-blue-50/10 dark:bg-charcoal-900/20 border border-dusty-blue-100/30 dark:border-charcoal-700/50 p-2 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-charcoal-100 dark:bg-charcoal-900 border border-dusty-blue-100/20 shrink-0">
+                        <img
+                          src={item.certificateUrl}
+                          alt={`${item.degree} Certificate`}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-semibold text-charcoal-800 dark:text-warm-cream/90 line-clamp-1">
+                          Certificate file attached
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCertificate(item.certificateUrl)}
+                          className="text-[10px] font-bold text-dusty-blue-600 dark:text-sage-400 hover:underline flex items-center gap-1 cursor-pointer mt-0.5"
+                        >
+                          <Eye className="w-3 h-3" /> View original photo
+                        </button>
+                      </div>
+                    </div>
+                    {editMode && (
+                      <button
+                        type="button"
+                        onClick={() => handleItemChange(item.id, 'certificateUrl', null)}
+                        className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 cursor-pointer transition-colors shrink-0"
+                        title="Remove certificate"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ) : editMode ? (
+                  <div className="relative border border-dashed border-dusty-blue-100 dark:border-charcoal-700 rounded-2xl p-4 hover:bg-dusty-blue-50/10 dark:hover:bg-charcoal-800/10 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const base64 = await compressImage(file);
+                            handleItemChange(item.id, 'certificateUrl', base64);
+                          } catch (err) {
+                            alert(err instanceof Error ? err.message : 'Error uploading file');
+                          }
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Upload className="w-5 h-5 text-dusty-blue-400 dark:text-sage-500" />
+                    <span className="text-xs font-semibold text-charcoal-800 dark:text-warm-cream/80">Upload Certificate Photo</span>
+                    <span className="text-[9px] text-charcoal-500/60 dark:text-warm-cream/40 font-mono">PNG, JPG up to 10MB (auto-compressed)</span>
+                  </div>
+                ) : (
+                  <div className="text-[11px] italic text-charcoal-500/50 dark:text-warm-cream/40 flex items-center gap-1.5 pl-1">
+                    <FileImage className="w-3.5 h-3.5 text-charcoal-400/40" />
+                    <span>No verification certificate uploaded</span>
+                  </div>
+                )}
+              </div>
+
             </div>
 
             {/* Action footer inside card on edit mode */}
@@ -348,6 +424,41 @@ export default function EducationSection({ education, setEducation, editMode, in
           </div>
         )}
       </motion.div>
+
+      {/* Image Lightbox Overlay */}
+      <AnimatePresence>
+        {selectedCertificate && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-charcoal-950/80 backdrop-blur-md no-print">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedCertificate(null)}
+              className="absolute inset-0 cursor-zoom-out"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="relative max-w-4xl max-h-[85vh] overflow-hidden rounded-3xl bg-white dark:bg-charcoal-900 border border-white/10 p-2 shadow-2xl flex flex-col items-center justify-center"
+            >
+              <button
+                onClick={() => setSelectedCertificate(null)}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-charcoal-900/80 text-white hover:bg-charcoal-800 cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={selectedCertificate}
+                alt="Certificate Preview"
+                referrerPolicy="no-referrer"
+                className="max-w-full max-h-[80vh] object-contain rounded-2xl"
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

@@ -47,7 +47,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-y-auto no-print">
           {/* Backdrop Blur Overlay */}
           <motion.div
             initial={{ opacity: 0 }}

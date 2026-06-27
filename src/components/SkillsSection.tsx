@@ -175,7 +175,7 @@ export default function SkillsSection({ skills, setSkills, editMode, info, setIn
         viewport={{ once: true, margin: '-100px' }}
         className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 bg-white dark:bg-charcoal-800/20 p-6 md:p-8 rounded-[2rem] border border-dusty-blue-50/5 dark:border-charcoal-800/10"
       >
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {filteredSkills.map((skill, index) => {
             return (
               <motion.div
@@ -183,7 +183,13 @@ export default function SkillsSection({ skills, setSkills, editMode, info, setIn
                 key={skill.id}
                 layout
                 variants={skillItemVariants}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{
+                  layout: { type: 'spring', stiffness: 220, damping: 28 },
+                  default: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
+                }}
                 className="space-y-2.5 relative group"
               >
                 

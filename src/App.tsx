@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, ArrowRight, Download, Eye, RefreshCw, LayoutDashboard } from 'lucide-react';
 
-import { PersonalInfo, ExperienceItem, EducationItem, SkillItem, ProjectItem, TabId } from './types';
+import { PersonalInfo, ExperienceItem, EducationItem, SkillItem, ProjectItem, AchievementItem, TabId } from './types';
 import {
   INITIAL_PERSONAL_INFO,
   INITIAL_EXPERIENCE,
   INITIAL_EDUCATION,
   INITIAL_SKILLS,
   INITIAL_PROJECTS,
+  INITIAL_ACHIEVEMENTS,
   getStoredData,
   setStoredData
 } from './data';
+
+import { subscribeToResumeData, saveResumeData, initializeDatabaseIfEmpty } from './lib/firebase';
 
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
@@ -19,6 +22,7 @@ import ExperienceSection from './components/ExperienceSection';
 import EducationSection from './components/EducationSection';
 import SkillsSection from './components/SkillsSection';
 import ProjectsSection from './components/ProjectsSection';
+import AchievementsSection from './components/AchievementsSection';
 import ContactSection from './components/ContactSection';
 import BackToTop from './components/BackToTop';
 import FloatingCustomizeControls from './components/FloatingCustomizeControls';
@@ -111,6 +115,73 @@ export default function App() {
     const loaded = getStoredData<ProjectItem[]>('projects_list', INITIAL_PROJECTS);
     return Array.isArray(loaded) ? loaded : INITIAL_PROJECTS;
   });
+  const [achievements, setAchievements] = useState<AchievementItem[]>(() => {
+    const loaded = getStoredData<AchievementItem[]>('achievements_list', INITIAL_ACHIEVEMENTS);
+    return Array.isArray(loaded) ? loaded : INITIAL_ACHIEVEMENTS;
+  });
+
+  // Keep track of whether we have unsaved local edits
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState<boolean>(false);
+
+  // Initialize Firestore database if empty on startup
+  useEffect(() => {
+    initializeDatabaseIfEmpty({
+      info: INITIAL_PERSONAL_INFO,
+      experience: INITIAL_EXPERIENCE,
+      education: INITIAL_EDUCATION,
+      skills: INITIAL_SKILLS,
+      projects: INITIAL_PROJECTS,
+      achievements: INITIAL_ACHIEVEMENTS
+    });
+  }, []);
+
+  // Subscribe to real-time Firestore updates when NOT in editMode
+  useEffect(() => {
+    if (editMode) return;
+
+    const unsubscribe = subscribeToResumeData((data) => {
+      if (data) {
+        if (data.info) setInfo(data.info);
+        if (data.experience) setExperience(data.experience);
+        if (data.education) setEducation(data.education);
+        if (data.skills) setSkills(data.skills);
+        if (data.projects) setProjects(data.projects);
+        if (data.achievements) setAchievements(data.achievements);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [editMode]);
+
+  // Set hasUnsavedEdits to true whenever states are modified while editing
+  useEffect(() => {
+    if (editMode) {
+      setHasUnsavedEdits(true);
+    }
+  }, [info, experience, education, skills, projects, achievements, editMode]);
+
+  // Debounced save to global Firestore database
+  useEffect(() => {
+    if (!editMode && !hasUnsavedEdits) return;
+
+    // Save instantly if we just turned off editMode, otherwise debounce by 1000ms
+    const delay = editMode ? 1000 : 0;
+
+    const timer = setTimeout(async () => {
+      console.log('Syncing edits to global Firestore database...');
+      await saveResumeData({
+        info,
+        experience,
+        education,
+        skills,
+        projects,
+        achievements
+      });
+      setHasUnsavedEdits(false);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [info, experience, education, skills, projects, achievements, editMode, hasUnsavedEdits]);
 
   // Track initial loader
   useEffect(() => {
@@ -142,6 +213,10 @@ export default function App() {
   }, [projects]);
 
   useEffect(() => {
+    setStoredData('achievements_list', achievements);
+  }, [achievements]);
+
+  useEffect(() => {
     setStoredData('dark_mode', darkMode);
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -165,14 +240,28 @@ export default function App() {
   };
 
   // Reset local state to default high-craft database
-  const handleResetData = () => {
+  const handleResetData = async () => {
     if (window.confirm("Are you sure you want to reset all custom portfolio edits? This will restore original benchmarks.")) {
+      const resetData = {
+        info: INITIAL_PERSONAL_INFO,
+        experience: INITIAL_EXPERIENCE,
+        education: INITIAL_EDUCATION,
+        skills: INITIAL_SKILLS,
+        projects: INITIAL_PROJECTS,
+        achievements: INITIAL_ACHIEVEMENTS
+      };
+
       setInfo(INITIAL_PERSONAL_INFO);
       setExperience(INITIAL_EXPERIENCE);
       setEducation(INITIAL_EDUCATION);
       setSkills(INITIAL_SKILLS);
       setProjects(INITIAL_PROJECTS);
+      setAchievements(INITIAL_ACHIEVEMENTS);
       setEditMode(false);
+      setHasUnsavedEdits(false);
+
+      console.log('Resetting global Firestore database to default template...');
+      await saveResumeData(resetData);
     }
   };
 
@@ -223,6 +312,16 @@ export default function App() {
           <ProjectsSection
             projects={projects}
             setProjects={setProjects}
+            editMode={editMode}
+            info={info}
+            setInfo={setInfo}
+          />
+        );
+      case 'achievements':
+        return (
+          <AchievementsSection
+            achievements={achievements}
+            setAchievements={setAchievements}
             editMode={editMode}
             info={info}
             setInfo={setInfo}
@@ -330,18 +429,18 @@ export default function App() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-8 p-4 rounded-2xl bg-sage-50 border border-sage-200 dark:bg-sage-900/20 dark:border-sage-800 text-sage-800 dark:text-sage-400 text-xs font-semibold flex items-center justify-between shadow-sm"
+              className="mb-8 p-4 rounded-2xl bg-sage-50 border border-sage-100 dark:bg-charcoal-800 dark:border-charcoal-700 text-sage-600 dark:text-warm-cream/90 text-xs font-semibold flex items-center justify-between shadow-sm"
             >
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-sage-500 animate-ping shrink-0" />
                 <span>
-                  <strong>Sandbox Edit Mode Enabled:</strong> You can edit any bio text, timeline record, skills, or projects inline. Changes persist automatically to localStorage.
+                  <strong className="text-sage-600 dark:text-sage-500">Sandbox Edit Mode Enabled:</strong> You can edit any bio text, timeline record, skills, or projects inline. Changes persist automatically to localStorage.
                 </span>
               </div>
               <button
                 id="exit-banner-btn"
                 onClick={() => setEditMode(false)}
-                className="underline hover:no-underline font-bold text-sage-600 dark:text-sage-400 cursor-pointer ml-4"
+                className="underline hover:no-underline font-bold text-sage-600 dark:text-sage-500 cursor-pointer ml-4 shrink-0"
               >
                 Done
               </button>
@@ -354,10 +453,10 @@ export default function App() {
           <motion.div
             id={`content-frame-${activeTab}`}
             key={activeTab}
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           >
             {renderActiveSection()}
           </motion.div>
@@ -443,6 +542,28 @@ export default function App() {
           </div>
         </div>
 
+        {/* Achievements Section */}
+        {achievements.length > 0 && (
+          <div className="space-y-4 print-break-inside-avoid">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 border-b border-gray-300 pb-1">Honors & Achievements</h3>
+            <div className="space-y-3">
+              {achievements.map((item) => (
+                <div key={item.id} className="space-y-1">
+                  <div className="flex justify-between font-semibold text-xs">
+                    <div>
+                      <span className="font-bold text-black">{item.title}</span>
+                      <span className="text-gray-400"> - </span>
+                      <span className="text-gray-850">{item.issuer}</span>
+                    </div>
+                    <span className="text-gray-500 font-mono text-right shrink-0">{item.date}</span>
+                  </div>
+                  <p className="text-[11px] text-gray-600 leading-snug">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Skills Section */}
         <div className="space-y-2 print-break-inside-avoid">
           <h3 className="text-sm font-bold uppercase tracking-wider text-gray-800 border-b border-gray-300 pb-1">Technical Skills & Competencies</h3>
@@ -469,7 +590,7 @@ export default function App() {
           <p>© 2026 {info.name}. Built with architectural precision and creative micro-interactions.</p>
           <div className="flex items-center justify-center space-x-1">
             <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            <span>Interactive Sandbox State Synchronized with Browser LocalStorage.</span>
+            <span>Interactive Sandbox State Synchronized with Cloud Firestore Database.</span>
           </div>
         </div>
       </footer>
@@ -482,6 +603,7 @@ export default function App() {
         editMode={editMode}
         setEditMode={handleToggleEditMode}
         onResetData={handleResetData}
+        hasUnsavedEdits={hasUnsavedEdits}
       />
 
       {/* Admin Authorization Access Key Gate */}

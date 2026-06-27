@@ -172,14 +172,20 @@ export default function ProjectsSection({ projects, setProjects, editMode, info,
         viewport={{ once: true, margin: '-100px' }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
       >
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {filteredProjects.map((project, index) => (
             <motion.div
               id={`project-card-${project.id}`}
               key={project.id}
               layout
               variants={projectItemVariants}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{
+                layout: { type: 'spring', stiffness: 220, damping: 28 },
+                default: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
+              }}
               onClick={() => !editMode && setActiveProjectModal(project)}
               className={`group bg-white dark:bg-charcoal-800/40 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl border border-dusty-blue-50/5 dark:border-charcoal-800/10 transition-all duration-300 flex flex-col justify-between ${
                 !editMode ? 'cursor-pointer' : ''

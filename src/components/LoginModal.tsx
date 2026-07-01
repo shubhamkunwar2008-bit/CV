@@ -26,20 +26,38 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsAuthorizing(true);
 
-    if (password === '*ad123min#') {
-      setIsAuthorizing(true);
-      setTimeout(() => {
-        onSuccess();
+    try {
+      const response = await fetch('/api/verify-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTimeout(() => {
+          onSuccess();
+          setIsAuthorizing(false);
+          setPassword('');
+        }, 800);
+      } else {
         setIsAuthorizing(false);
-        setPassword('');
-      }, 800);
-    } else {
+        setIsWiggling(true);
+        setError(data.error || 'Invalid administrative password. Access denied.');
+        setTimeout(() => setIsWiggling(false), 500);
+      }
+    } catch (err) {
+      setIsAuthorizing(false);
       setIsWiggling(true);
-      setError('Invalid administrative password. Access denied.');
+      setError('A connection error occurred. Please try again.');
       setTimeout(() => setIsWiggling(false), 500);
     }
   };

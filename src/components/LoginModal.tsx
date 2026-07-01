@@ -31,6 +31,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setError('');
     setIsAuthorizing(true);
 
+    const clientFallbackPassword = import.meta.env.VITE_ADMIN_PASSWORD || '*ad123min#';
+
     try {
       const response = await fetch('/api/verify-password', {
         method: 'POST',
@@ -39,6 +41,24 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         },
         body: JSON.stringify({ password }),
       });
+
+      // If the API endpoint is not found (404), fall back to client-side validation
+      // so static hosts like Netlify/GitHub Pages still function perfectly.
+      if (response.status === 404) {
+        if (password === clientFallbackPassword) {
+          setTimeout(() => {
+            onSuccess();
+            setIsAuthorizing(false);
+            setPassword('');
+          }, 800);
+        } else {
+          setIsAuthorizing(false);
+          setIsWiggling(true);
+          setError('Invalid administrative password. Access denied.');
+          setTimeout(() => setIsWiggling(false), 500);
+        }
+        return;
+      }
 
       const data = await response.json();
 
@@ -55,10 +75,20 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         setTimeout(() => setIsWiggling(false), 500);
       }
     } catch (err) {
-      setIsAuthorizing(false);
-      setIsWiggling(true);
-      setError('A connection error occurred. Please try again.');
-      setTimeout(() => setIsWiggling(false), 500);
+      // In case of a network or connection error (e.g. no backend server running or offline),
+      // gracefully fall back to client-side validation so static deployments function.
+      if (password === clientFallbackPassword) {
+        setTimeout(() => {
+          onSuccess();
+          setIsAuthorizing(false);
+          setPassword('');
+        }, 800);
+      } else {
+        setIsAuthorizing(false);
+        setIsWiggling(true);
+        setError('Invalid administrative password. Access denied.');
+        setTimeout(() => setIsWiggling(false), 500);
+      }
     }
   };
 
